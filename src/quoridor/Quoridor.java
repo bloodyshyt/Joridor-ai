@@ -114,6 +114,87 @@ public class Quoridor {
 		return 0;
 	}
 	
+	/**
+	 * @param player Player in question
+	 * @return int[] of {steps to goal, x-coord of next Step, y-coord}
+	 */
+	public int[] BFS(Player player) {
+	
+	
+		int [][][] prev = new int[boardDim][boardDim][2]; // prev[x][y][prev x,
+															// y];
+	
+		// initialise all as {-1, -1} (not visited)
+		for (int i = 0; i < boardDim; i++)
+			for (int j = 0; j < boardDim; j++)
+				prev[i][j] = new int[] { -1, -1 };
+	
+		// get starting point
+		prev[player.getX()][player.getY()] = new int[] {player.getX(), player.getY()};
+		Queue<int[]> Q = new LinkedList<>();
+		Q.add(new int[] {player.getX(), player.getY()});
+	
+		int[] goalCell = new int[] {-1, -1};
+		
+		while (!Q.isEmpty()) {
+			int[] point = Q.remove();
+			int x = point[0];
+			int y = point[1];
+			
+			if(y == player.winning_y) {
+				goalCell[0] = x;
+				goalCell[1] = y;
+				break;
+			}
+			
+			int _x, _y;
+	
+			// check adjacent spots
+			for (int i = 0; i < 4; i++) {
+				_x = x + deltaCoord[i][0];
+				_y = y + deltaCoord[i][1];
+				if ((_x < 0 || _x > boardDim - 1) // out of the board
+						|| (_y < 0 || _y > boardDim - 1))
+					continue;
+				if ( canGoIn(x, y, i)
+						&& (prev[_x][_y][0] == -1 && prev[_x][_y][0] == -1) ) {
+					int[] newPoint = new int[] {_x, _y};
+					prev[_x][_y][0] = x;
+					prev[_x][_y][1] = y;
+					Q.add(newPoint);
+				}
+			}
+		}
+		
+		if(goalCell[0] == -1) return null;	// no path to goal exists
+		
+		// find number of steps
+		int steps = 0;
+		int x = goalCell[0];	// will eventually hold first step
+		int y = goalCell[1];	// in shortest path
+		
+		Deque<int[]> D = new ArrayDeque<int[]>();
+		
+		Str.println("Backtracking from " + Str.ptToStr(goalCell[0], goalCell[1]) + " to " + Str.ptToStr(player.getX(), player.getY()));
+		while( !(x == player.getX() && y == player.getY()) ) {
+			Str.print("Now at " + Str.ptToStr(x, y));
+			x = prev[x][y][0];
+			y = prev[x][y][1];
+			Str.println("  Next stop: " + Str.ptToStr(x, y));
+			D.push(new int[] {x,y});
+			steps++;
+		}
+		
+		D.pop();	// last element is the source cell
+		int[] nextStep = D.pop();
+		
+		return new int[] {steps, nextStep[0], nextStep[1]};
+	}
+
+	public Player getPlayer(int playerNo) {
+		return (playerNo == 1) ? p1 : p2;
+	}
+	
 	public void display() {
 		for(int i = boardDim - 1; i >= 0; i--) {
 			printHorizontalWalls(i);
@@ -161,83 +242,6 @@ public class Quoridor {
 		System.out.println();
 	}
 	
-	// returns number of steps to goal, x and y coordinate of first step in this path
-	public int[] BFS(Player player) {
-
-
-		int [][][] prev = new int[boardDim][boardDim][2]; // prev[x][y][prev x,
-															// y];
-
-		// initialise all as {-1, -1} (not visited)
-		for (int i = 0; i < boardDim; i++)
-			for (int j = 0; j < boardDim; j++)
-				prev[i][j] = new int[] { -1, -1 };
-
-		// get starting point
-		prev[player.x][player.y] = new int[] {player.x, player.y};
-		Queue<int[]> Q = new LinkedList<>();
-		Q.add(new int[] {player.x, player.y});
-
-		int[] goalCell = new int[] {-1, -1};
-		
-		while (!Q.isEmpty()) {
-			int[] point = Q.remove();
-			int x = point[0];
-			int y = point[1];
-			
-			if(y == player.winning_y) {
-				goalCell[0] = x;
-				goalCell[1] = y;
-				break;
-			}
-			
-			int _x, _y;
-
-			// check adjacent spots
-			for (int i = 0; i < 4; i++) {
-				_x = x + deltaCoord[i][0];
-				_y = y + deltaCoord[i][1];
-				if ((_x < 0 || _x > boardDim - 1) // out of the board
-						|| (_y < 0 || _y > boardDim - 1))
-					continue;
-				if ( canGoIn(x, y, i)
-						&& (prev[_x][_y][0] == -1 && prev[_x][_y][0] == -1) ) {
-					int[] newPoint = new int[] {_x, _y};
-					prev[_x][_y][0] = x;
-					prev[_x][_y][1] = y;
-					Q.add(newPoint);
-				}
-			}
-		}
-		
-		//printBFSMatrix(prev);
-		
-		if(goalCell[0] == -1) return null;	// no path to goal exists
-		
-		// find number of steps
-		int steps = 0;
-		int x = goalCell[0];	// will eventually hold first step
-		int y = goalCell[1];	// in shortest path
-		
-		Deque<int[]> D = new ArrayDeque<int[]>();
-		
-		Str.println("Backtracking from " + Str.ptToStr(goalCell[0], goalCell[1]) + " to " + Str.ptToStr(player.x, player.y));
-		while( !(x == player.x && y == player.y) ) {
-			Str.print("Now at " + Str.ptToStr(x, y));
-			x = prev[x][y][0];
-			y = prev[x][y][1];
-			Str.println("  Next stop: " + Str.ptToStr(x, y));
-			D.push(new int[] {x,y});
-			steps++;
-		}
-		
-		D.pop();	// last element is the source cell
-		int[] nextStep = D.pop();
-		
-		return new int[] {steps, nextStep[0], nextStep[1]};
-	}
-	
-
 	public static void main(String[] str) {
 		// P1 X, P2 O
 		Quoridor q = new Quoridor();
