@@ -161,15 +161,6 @@ public class Quoridor {
 		System.out.println();
 	}
 	
-	private void printBFSMatrix(int[][][] prev) {
-		for (int y = prev.length - 1; y >= 0; y--) {
-			for (int x = 0; x < prev[0].length; x++) {
-				System.out.print(prev[x][y][0] + "," + prev[x][y][1] + "\t");
-			}
-			System.out.println();
-		}
-	}
-	
 	// returns number of steps to goal, x and y coordinate of first step in this path
 	public int[] BFS(Player player) {
 
