@@ -219,7 +219,9 @@ public class Quoridor {
 			}
 		}
 		
-		printBFSMatrix(prev);
+		//printBFSMatrix(prev);
+		
+		if(goalCell[0] == -1) return null;	// no path to goal exists
 		
 		// find number of steps
 		int steps = 0;
