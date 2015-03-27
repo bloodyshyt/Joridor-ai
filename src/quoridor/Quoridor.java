@@ -242,6 +242,14 @@ public class Quoridor {
 		System.out.println();
 	}
 	
+	public void debug() {
+		// print player data
+		Str.println(p1.toString(1));
+		Str.println(p2.toString(2));
+		// print wall data
+		for(Wall w : walls) Str.println(w.toString());
+	}
+	
 	public static void main(String[] str) {
 		// P1 X, P2 O
 		Quoridor q = new Quoridor();
@@ -257,5 +265,7 @@ public class Quoridor {
 		int[] ans = q.BFS(q.p1);
 		
 		System.out.println("Steps to goal for player 1: " + ans[0] + " to " + ans[1] + " " + ans[2]);
+		
+		q.debug();
 	}
 }
