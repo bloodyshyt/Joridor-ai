@@ -8,6 +8,8 @@ import java.util.Queue;
 
 import org.omg.CORBA.RepositoryIdHelper;
 
+import Util.Str;
+
 public class Quoridor {
 
 	public static int boardDim = 9;
@@ -171,7 +173,6 @@ public class Quoridor {
 	// returns number of steps to goal, x and y coordinate of first step in this path
 	public int[] BFS(Player player) {
 
-		int sourceVal = 100;
 
 		int [][][] prev = new int[boardDim][boardDim][2]; // prev[x][y][prev x,
 															// y];
@@ -182,8 +183,7 @@ public class Quoridor {
 				prev[i][j] = new int[] { -1, -1 };
 
 		// get starting point
-		int[] source = new int[] { sourceVal, sourceVal };
-		prev[player.x][player.y] = source;
+		prev[player.x][player.y] = new int[] {player.x, player.y};
 		Queue<int[]> Q = new LinkedList<>();
 		Q.add(new int[] {player.x, player.y});
 
@@ -228,93 +228,22 @@ public class Quoridor {
 		
 		Deque<int[]> D = new ArrayDeque<int[]>();
 		
-		steps = 1; // because we are looking ahead
-		System.out.println("Goal of " + goalCell[0] + "," + goalCell[1]);
-		while(x != player.x && y != player.y) {
-			System.out.println("We are at (" + x + "," + y + ") next stop (" + prev[x][y][0]
-					+ "," + prev[x][y][1] + ")");
+		Str.println("Backtracking from " + Str.ptToStr(goalCell[0], goalCell[1]) + " to " + Str.ptToStr(player.x, player.y));
+		while( !(x == player.x && y == player.y) ) {
+			Str.print("Now at " + Str.ptToStr(x, y));
 			x = prev[x][y][0];
 			y = prev[x][y][1];
-			D.add(new int[] {x,y});
+			Str.println("  Next stop: " + Str.ptToStr(x, y));
+			D.push(new int[] {x,y});
 			steps++;
 		}
 		
-		//D.pop();
+		D.pop();	// last element is the source cell
 		int[] nextStep = D.pop();
+		
 		return new int[] {steps, nextStep[0], nextStep[1]};
 	}
 	
-
-	
-
-	/**
-	 * @param player
-	 * @return int[] of x, y of next tile in shortest path to goal, null if not
-	 *         such path exists (i.e illegal wall move)
-	 * 
-	 */
-	public int[] BFS2(Player player) {
-		boolean[][] visited = new boolean[boardDim][boardDim];
-		int[][] distTo = new int[boardDim][boardDim];
-		for (int i = 0; i < boardDim; i++)
-			for (int j = 0; j < boardDim; j++)
-				visited[i][j] = false;
-
-		Point source = new Point(player.getX(), player.getY());
-		visited[source.x][source.y] = true;
-		distTo[source.x][source.y] = 0;
-
-		Queue<Point> Q = new LinkedList<>();
-		Q.add(source);
-
-		Point v, goalPoint = null;
-
-		while (!Q.isEmpty()) {
-
-			v = Q.remove();
-
-			// check if reached goal
-			// if(v.y == player.winning_y) {
-			// goalPoint = v;
-			// break;
-			// }
-
-			for (int i = 0; i < 4; i++) {
-				int _x = v.x + deltaCoord[i][0];
-				int _y = v.y + deltaCoord[i][1];
-				if ((_x < 0 || _x > boardDim - 1) // out of the board
-						|| (_y < 0 || _y > boardDim - 1))
-					continue;
-				if (canGoIn(v, i) && !visited[_x][_y]) {
-					// valid move and cell not visited
-					Point p = new Point(_x, _y, v);
-					visited[_x][_y] = true;
-					distTo[_x][_y] = distTo[v.x][v.y] + 1;
-					Q.add(p);
-				}
-			}
-
-			// print out dist matrix
-			for (int[] b : distTo) {
-				for (int c : b) {
-					System.out.print(c + "\t");
-				}
-				System.out.println();
-			}
-			System.out.println();
-
-		}
-
-		return null;
-
-		/*
-		 * if(goalPoint == null) // there is no path return null; else { Point p
-		 * = goalPoint; int nsteps = 0; while(p != source) {
-		 * System.out.println(p.x + "," + p.y); p = p.prev; nsteps++; }
-		 * 
-		 * return new int[] {p.x, p.y, nsteps}; }
-		 */
-	}
 
 	public static void main(String[] str) {
 		// P1 X, P2 O
@@ -322,6 +251,7 @@ public class Quoridor {
 		q.walls.add(new Wall(4, 4, Wall.HORIZONTAL));	// correct
 		q.walls.add(new Wall(3, 3, Wall.VERTICAL));		// correct
 		q.walls.add(new Wall(5, 0, Wall.HORIZONTAL));
+		q.walls.add(new Wall(6, 0, Wall.VERTICAL));
 		q.display();	// display is wrong
 		System.out.println("Go up? " + q.canGoIn(3, 5, UP));	// true - true
 		System.out.println("Go down? " + q.canGoIn(3, 5, DOWN));	// false - false
