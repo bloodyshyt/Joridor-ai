@@ -26,6 +26,8 @@ public class Quoridor {
 		// creates a new board
 		p1 = new Player(boardDim / 2, 0);
 		p2 = new Player(boardDim / 2, boardDim - 1);
+		p1.setPlayerNo(1);
+		p2.setPlayerNo(2);
 		walls = new ArrayList<>();
 	}
 
@@ -44,8 +46,6 @@ public class Quoridor {
 		ArrayList<Move> legalMoves = new ArrayList<>();
 		generatePlayerMoves(p, legalMoves);
 		generateWallMoves(p, legalMoves);
-		
-		
 		// error checking 
 		if (legalMoves.isEmpty()) Str.println("No moves generated!");
 		
@@ -70,9 +70,28 @@ public class Quoridor {
 	}
 
 	private void generatePlayerMoves(Player p, ArrayList<Move> moves) {
+		Point pt = p.getPoint();
+		int x = pt.x, y = pt.y;
 		// iterate through all the directions and see if we can move there
 		for(int i = 0; i < 4; i++) {
-			
+			int adjX = x + deltaCoord[i][0], adjY = y + deltaCoord[i][0];
+			if(!wallInDir(adjX, adjY, i)) {
+				if(pawnInDir(adjX, adjY, i)) {
+					// check again in the same direction from opponent's pawn
+					if(canGoIn(adjX, adjY, i)) moves.add(new PlayerMove(p.playerNo, 
+							adjX + deltaCoord[i][0], adjY + deltaCoord[i][1]));
+					// else check to the right and left of the previous direction
+					else {
+						for(int ii : new int[] {i - 1, i + 1}) {
+							ii = ii % 4;
+							if(canGoIn(adjX, adjY, ii)) moves.add(new PlayerMove(p.playerNo, 
+									adjX + deltaCoord[ii][0], adjY + deltaCoord[ii][1]));
+						}
+					}
+				} else {
+					moves.add(new PlayerMove(p.playerNo, adjX, adjY));
+				}	
+			}
 		}
 	}
 
