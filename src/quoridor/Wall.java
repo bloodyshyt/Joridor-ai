@@ -1,5 +1,7 @@
 package quoridor;
 
+import Util.Str;
+
 public class Wall {
 
 	int x, y;
@@ -27,6 +29,10 @@ public class Wall {
 
 	public int getOrientation() {
 		return orientation;
+	}
+	
+	public String toString() {
+		return new String(Str.ptToStr(x, y) + " " + ((orientation == HORIZONTAL) ? "horizontal" : "vertical"));
 	}
 
 }

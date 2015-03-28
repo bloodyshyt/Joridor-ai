@@ -39,41 +39,56 @@ public class Quoridor {
 	}
 
 	// helper methods
+	
+	public boolean wallInDir(int x, int y, int direction) {
+		if(direction == UP 		&& wallAt(x,  y, Wall.HORIZONTAL)) return true;
+		if(direction == DOWN 	&& wallAt(x,  y - 1, Wall.HORIZONTAL)) return true;
+		if(direction == LEFT 	&& wallAt(x,  y, Wall.VERTICAL)) return true;
+		if(direction == RIGHT 	&& wallAt(x + 1,  y, Wall.VERTICAL)) return true;
+		return false;
+	}
+	
+	public boolean wallInDir(Point pt, int direction) {
+		return wallInDir(pt.x,  pt.y, direction);
+	}
+	
+	public boolean pawnInDir(int x, int y, int direction) {
+		if(pawnAt(x + deltaCoord[direction][0], y + deltaCoord[direction][1]) != 0) return true;
+		return false;
+	}
+	
+	public boolean pawnInDir(Point pt, int direction) {
+		return pawnInDir(pt.x,  pt.y,  direction);
+	}
 
+	public int[] moveIn(Point pt, int direction) {
+		int x = pt.x, y = pt.y;
+		return null;
+		
+	}
+	
 	public boolean canGoIn(Point p, int direction) {
 		return canGoIn(p.x, p.y, direction);
 	}
 
 	/**
+	 * Is there an empty adjacent cell in the given direction?
 	 * @param x
 	 * @param y
 	 * @param direction
 	 * @return
 	 */
 	public boolean canGoIn(int x, int y, int direction) {
-		// coords in clockwise fashion starting from top right corner
-		// A(0) B(1)
-		// C(2) D(3)
-		int[] A = new int[] { x, y };
-		int[] B = new int[] { x + 1, y };
-		int[] C = new int[] { x, y - 1 };
-		int[] D = new int[] { x + 1, y - 1 };
-
-		if (direction == UP && !wallAt(A, Wall.HORIZONTAL)
-				&& !wallAt(B, Wall.HORIZONTAL) && (pawnAt(x, y + 1) == 0))
-			return true;
-		if (direction == DOWN && !wallAt(B, Wall.HORIZONTAL)
-				&& !wallAt(D, Wall.HORIZONTAL) && (pawnAt(x, y - 1) == 0))
-			return true;
-		if (direction == LEFT && !wallAt(A, Wall.VERTICAL)
-				&& !wallAt(C, Wall.VERTICAL) && (pawnAt(x - 1, y) == 0))
-			return true;
-		if (direction == RIGHT && !wallAt(B, Wall.VERTICAL)
-				&& !wallAt(D, Wall.VERTICAL) && (pawnAt(x + 1, y) == 0))
-			return true;
+		if(!wallInDir(x, y, direction) && !pawnInDir(x, y, direction)) return true;
+		
 		return false;
 	}
 
+	/**
+	 * @param coords x and y coordinates
+	 * @param orientation 
+	 * @return whether there is a wall at the top left corner
+	 */
 	public boolean wallAt(int[] coords, int orientation) {
 		
 		// add the edge conditions
@@ -169,7 +184,7 @@ public class Quoridor {
 		if(goalCell[0] == -1) return null;	// no path to goal exists
 		
 		// find number of steps
-		int steps = 0;
+		int steps = 1;
 		int x = goalCell[0];	// will eventually hold first step
 		int y = goalCell[1];	// in shortest path
 		
@@ -191,6 +206,42 @@ public class Quoridor {
 		return new int[] {steps, nextStep[0], nextStep[1]};
 	}
 
+	public Move[] generateMoves(Player p) {
+		ArrayList<Move> legalMoves = new ArrayList<>();
+		generatePlayerMoves(p, legalMoves);
+		generateWallMoves(p, legalMoves);
+		
+		
+		// error checking 
+		if (legalMoves.isEmpty()) Str.println("No moves generated!");
+		
+		Move[] m = new Move[legalMoves.size()];
+		legalMoves.toArray(m);
+		return m;
+	}
+	
+	private void generateWallMoves(Player p, ArrayList<Move> moves) {
+		if(p.getWalls() > 1) {
+			for(int x = 1; x < boardDim; x++) {
+				for(int y = 0; y < boardDim - 1; y++) {
+					// can we put a vertical wall?
+					if(!wallAt(x, y, Wall.VERTICAL) && !wallAt(x, y + 1, Wall.VERTICAL)) 
+						moves.add(new WallMove(x, y, Wall.VERTICAL));
+					// can we put horizontal wall?
+					if(!wallAt(x, y, Wall.HORIZONTAL) && !wallAt(x - 1, y, Wall.HORIZONTAL)) 
+						moves.add(new WallMove(x, y, Wall.HORIZONTAL));
+				}
+			}
+		}
+	}
+	
+	private void generatePlayerMoves(Player p, ArrayList<Move> moves) {
+		// iterate through all the directions and see if we can move there
+		for(int i = 0; i < 4; i++) {
+			
+		}
+	}
+	
 	public Player getPlayer(int playerNo) {
 		return (playerNo == 1) ? p1 : p2;
 	}

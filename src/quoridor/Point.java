@@ -1,18 +1,14 @@
 package quoridor;
 
 public class Point {
-	int x, y;
-	Point prev;
+	public int x, y;
 
-	Point(int a, int b) {
+	public Point(int a, int b) {
 		x = a;
 		y = b;
-		prev = null;
-	}
+	}	
 	
-	Point(int a, int b, Point prev) {
-		this(a, b);
-		this.prev = prev;
+	public String toString() {
+		return new String("(" + x + "," + y + ")");
 	}
-	
 }
