@@ -40,95 +40,42 @@ public class Quoridor {
 
 	// helper methods
 	
-	public boolean wallInDir(int x, int y, int direction) {
-		if(direction == UP 		&& wallAt(x,  y, Wall.HORIZONTAL)) return true;
-		if(direction == DOWN 	&& wallAt(x,  y - 1, Wall.HORIZONTAL)) return true;
-		if(direction == LEFT 	&& wallAt(x,  y, Wall.VERTICAL)) return true;
-		if(direction == RIGHT 	&& wallAt(x + 1,  y, Wall.VERTICAL)) return true;
-		return false;
-	}
-	
-	public boolean wallInDir(Point pt, int direction) {
-		return wallInDir(pt.x,  pt.y, direction);
-	}
-	
-	public boolean pawnInDir(int x, int y, int direction) {
-		if(pawnAt(x + deltaCoord[direction][0], y + deltaCoord[direction][1]) != 0) return true;
-		return false;
-	}
-	
-	public boolean pawnInDir(Point pt, int direction) {
-		return pawnInDir(pt.x,  pt.y,  direction);
+	public Move[] generateMoves(Player p) {
+		ArrayList<Move> legalMoves = new ArrayList<>();
+		generatePlayerMoves(p, legalMoves);
+		generateWallMoves(p, legalMoves);
+		
+		
+		// error checking 
+		if (legalMoves.isEmpty()) Str.println("No moves generated!");
+		
+		Move[] m = new Move[legalMoves.size()];
+		legalMoves.toArray(m);
+		return m;
 	}
 
-	public int[] moveIn(Point pt, int direction) {
-		int x = pt.x, y = pt.y;
-		return null;
-		
-	}
-	
-	public boolean canGoIn(Point p, int direction) {
-		return canGoIn(p.x, p.y, direction);
-	}
-
-	/**
-	 * Is there an empty adjacent cell in the given direction?
-	 * @param x
-	 * @param y
-	 * @param direction
-	 * @return
-	 */
-	public boolean canGoIn(int x, int y, int direction) {
-		if(!wallInDir(x, y, direction) && !pawnInDir(x, y, direction)) return true;
-		
-		return false;
-	}
-
-	/**
-	 * @param coords x and y coordinates
-	 * @param orientation 
-	 * @return whether there is a wall at the top left corner
-	 */
-	public boolean wallAt(int[] coords, int orientation) {
-		
-		// add the edge conditions
-		if(coords[0] == 0 && orientation == Wall.VERTICAL) return true;
-		if(coords[1] == boardDim - 1 && orientation == Wall.HORIZONTAL) return true;
-		
-		for (Wall w : walls) {
-			if (orientation == Wall.HORIZONTAL) {
-				if (w.orientation == Wall.HORIZONTAL
-						&& (w.getX() == coords[0] || w.getX() == coords[0] + 1)
-						&& w.getY() == coords[1])
-					return true;
-			}
-			if (orientation == Wall.VERTICAL) {
-				if (w.orientation == Wall.VERTICAL
-						&& (w.getY() == coords[1] || w.getY() == coords[1] - 1)
-						&& w.getX() == coords[0])
-					return true;
+	private void generateWallMoves(Player p, ArrayList<Move> moves) {
+		if(p.getWalls() > 1) {
+			for(int x = 1; x < boardDim; x++) {
+				for(int y = 0; y < boardDim - 1; y++) {
+					// can we put a vertical wall?
+					if(!wallAt(x, y, Wall.VERTICAL) && !wallAt(x, y + 1, Wall.VERTICAL)) 
+						moves.add(new WallMove(x, y, Wall.VERTICAL));
+					// can we put horizontal wall?
+					if(!wallAt(x, y, Wall.HORIZONTAL) && !wallAt(x - 1, y, Wall.HORIZONTAL)) 
+						moves.add(new WallMove(x, y, Wall.HORIZONTAL));
+				}
 			}
 		}
-		return false;
 	}
 
-	private boolean wallAt(int i, int j, int orientation) {
-		return wallAt(new int[] { i, j }, orientation);
+	private void generatePlayerMoves(Player p, ArrayList<Move> moves) {
+		// iterate through all the directions and see if we can move there
+		for(int i = 0; i < 4; i++) {
+			
+		}
 	}
 
-	/**
-	 * @param x x coord
-	 * @param y y coord
-	 * @return player number if pawn is there, else 0
-	 */
-	private int pawnAt(int x, int y) {
-		if (p1.getX() == x && p1.getY() == y)
-			return 1;
-		if (p2.getX() == x && p2.getY() == y)
-			return 2;
-		return 0;
-	}
-	
 	/**
 	 * @param player Player in question
 	 * @return int[] of {steps to goal, x-coord of next Step, y-coord}
@@ -206,42 +153,97 @@ public class Quoridor {
 		return new int[] {steps, nextStep[0], nextStep[1]};
 	}
 
-	public Move[] generateMoves(Player p) {
-		ArrayList<Move> legalMoves = new ArrayList<>();
-		generatePlayerMoves(p, legalMoves);
-		generateWallMoves(p, legalMoves);
-		
-		
-		// error checking 
-		if (legalMoves.isEmpty()) Str.println("No moves generated!");
-		
-		Move[] m = new Move[legalMoves.size()];
-		legalMoves.toArray(m);
-		return m;
-	}
+	// helper methods
 	
-	private void generateWallMoves(Player p, ArrayList<Move> moves) {
-		if(p.getWalls() > 1) {
-			for(int x = 1; x < boardDim; x++) {
-				for(int y = 0; y < boardDim - 1; y++) {
-					// can we put a vertical wall?
-					if(!wallAt(x, y, Wall.VERTICAL) && !wallAt(x, y + 1, Wall.VERTICAL)) 
-						moves.add(new WallMove(x, y, Wall.VERTICAL));
-					// can we put horizontal wall?
-					if(!wallAt(x, y, Wall.HORIZONTAL) && !wallAt(x - 1, y, Wall.HORIZONTAL)) 
-						moves.add(new WallMove(x, y, Wall.HORIZONTAL));
-				}
+	public boolean wallInDir(int x, int y, int direction) {
+		if(direction == UP 		&& wallAt(x,  y, Wall.HORIZONTAL)) return true;
+		if(direction == DOWN 	&& wallAt(x,  y - 1, Wall.HORIZONTAL)) return true;
+		if(direction == LEFT 	&& wallAt(x,  y, Wall.VERTICAL)) return true;
+		if(direction == RIGHT 	&& wallAt(x + 1,  y, Wall.VERTICAL)) return true;
+		return false;
+	}
+
+	public boolean wallInDir(Point pt, int direction) {
+		return wallInDir(pt.x,  pt.y, direction);
+	}
+
+	public boolean pawnInDir(int x, int y, int direction) {
+		if(pawnAt(x + deltaCoord[direction][0], y + deltaCoord[direction][1]) != 0) return true;
+		return false;
+	}
+
+	public boolean pawnInDir(Point pt, int direction) {
+		return pawnInDir(pt.x,  pt.y,  direction);
+	}
+
+	public int[] moveIn(Point pt, int direction) {
+		int x = pt.x, y = pt.y;
+		return null;
+		
+	}
+
+	public boolean canGoIn(Point p, int direction) {
+		return canGoIn(p.x, p.y, direction);
+	}
+
+	/**
+	 * Is there an empty adjacent cell in the given direction?
+	 * @param x
+	 * @param y
+	 * @param direction
+	 * @return
+	 */
+	public boolean canGoIn(int x, int y, int direction) {
+		if(!wallInDir(x, y, direction) && !pawnInDir(x, y, direction)) return true;
+		
+		return false;
+	}
+
+	/**
+	 * @param coords x and y coordinates
+	 * @param orientation 
+	 * @return whether there is a wall at the top left corner
+	 */
+	public boolean wallAt(int[] coords, int orientation) {
+		
+		// add the edge conditions
+		if(coords[0] == 0 && orientation == Wall.VERTICAL) return true;
+		if(coords[1] == boardDim - 1 && orientation == Wall.HORIZONTAL) return true;
+		
+		for (Wall w : walls) {
+			if (orientation == Wall.HORIZONTAL) {
+				if (w.orientation == Wall.HORIZONTAL
+						&& (w.getX() == coords[0] || w.getX() == coords[0] + 1)
+						&& w.getY() == coords[1])
+					return true;
+			}
+			if (orientation == Wall.VERTICAL) {
+				if (w.orientation == Wall.VERTICAL
+						&& (w.getY() == coords[1] || w.getY() == coords[1] - 1)
+						&& w.getX() == coords[0])
+					return true;
 			}
 		}
+		return false;
 	}
-	
-	private void generatePlayerMoves(Player p, ArrayList<Move> moves) {
-		// iterate through all the directions and see if we can move there
-		for(int i = 0; i < 4; i++) {
-			
-		}
+
+	private boolean wallAt(int i, int j, int orientation) {
+		return wallAt(new int[] { i, j }, orientation);
 	}
-	
+
+	/**
+	 * @param x x coord
+	 * @param y y coord
+	 * @return player number if pawn is there, else 0
+	 */
+	private int pawnAt(int x, int y) {
+		if (p1.getX() == x && p1.getY() == y)
+			return 1;
+		if (p2.getX() == x && p2.getY() == y)
+			return 2;
+		return 0;
+	}
+
 	public Player getPlayer(int playerNo) {
 		return (playerNo == 1) ? p1 : p2;
 	}
