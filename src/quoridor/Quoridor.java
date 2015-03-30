@@ -3,6 +3,7 @@ package quoridor;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -17,6 +18,7 @@ public class Quoridor {
 	public final static int DOWN = 1;
 	public final static int LEFT = 2;
 	public final static int RIGHT = 3;
+	
 	public final static int[][] deltaCoord = new int[][] { { 0, 1 }, { 0, -1 },
 			{ -1, 0 }, { 1, 0 } }; // up, down, left, right
 	Player p1, p2;
@@ -41,6 +43,10 @@ public class Quoridor {
 	}
 
 	// helper methods
+	public Move[] generateMoves(int playerNo) {
+		return generateMoves(getPlayer(playerNo));
+	}
+	
 	
 	public Move[] generateMoves(Player p) {
 		ArrayList<Move> legalMoves = new ArrayList<>();
@@ -55,15 +61,16 @@ public class Quoridor {
 	}
 
 	private void generateWallMoves(Player p, ArrayList<Move> moves) {
+		int playerNo = p.getPlayerNo();
 		if(p.getWalls() > 1) {
 			for(int x = 1; x < boardDim; x++) {
 				for(int y = 0; y < boardDim - 1; y++) {
-					// can we put a vertical wall?
-					if(!wallAt(x, y, Wall.VERTICAL) && !wallAt(x, y + 1, Wall.VERTICAL)) 
-						moves.add(new WallMove(x, y, Wall.VERTICAL));
-					// can we put horizontal wall?
-					if(!wallAt(x, y, Wall.HORIZONTAL) && !wallAt(x - 1, y, Wall.HORIZONTAL)) 
-						moves.add(new WallMove(x, y, Wall.HORIZONTAL));
+					if(!wallAt(x, y, Wall.HORIZONTAL) && !wallAt(x - 1, y, Wall.HORIZONTAL) 
+							&& !wallAt(x, y, Wall.VERTICAL) && !wallAt(x, y + 1, Wall.VERTICAL)) {
+								moves.add(new WallMove(x, y, Wall.HORIZONTAL, p.getPlayerNo()));
+								moves.add(new WallMove(x, y, Wall.VERTICAL, p.getPlayerNo()));
+							}
+									
 				}
 			}
 		}
@@ -73,107 +80,120 @@ public class Quoridor {
 		Point pt = p.getPoint();
 		int x = pt.x, y = pt.y;
 		// iterate through all the directions and see if we can move there
-		for(int i = 0; i < 4; i++) {
-			int adjX = x + deltaCoord[i][0], adjY = y + deltaCoord[i][0];
-			if(!wallInDir(adjX, adjY, i)) {
-				if(pawnInDir(adjX, adjY, i)) {
-					// check again in the same direction from opponent's pawn
-					if(canGoIn(adjX, adjY, i)) moves.add(new PlayerMove(p.playerNo, 
-							adjX + deltaCoord[i][0], adjY + deltaCoord[i][1]));
-					// else check to the right and left of the previous direction
-					else {
-						for(int ii : new int[] {i - 1, i + 1}) {
-							ii = ii % 4;
-							if(canGoIn(adjX, adjY, ii)) moves.add(new PlayerMove(p.playerNo, 
-									adjX + deltaCoord[ii][0], adjY + deltaCoord[ii][1]));
-						}
+		for (int i = 0; i < 4; i++) {
+			int adjX = x + deltaCoord[i][0], adjY = y + deltaCoord[i][1];
+			
+			if(canGoIn(x, y, i)) {
+				moves.add(new PlayerMove(p.playerNo, adjX, adjY));
+			} else
+			
+			if(!wallInDir(x, y, i) && pawnInDir(x, y, i)) {
+				if(canGoIn(adjX, adjY, i)) 
+					moves.add(new PlayerMove(p.playerNo, adjX + deltaCoord[i][0], adjY + deltaCoord[i][1]));
+				else {
+					for(int ii : new int[] {4 + i - 1, 4 + i +1}) {
+						int j = ii % 4;
+						if(canGoIn(adjX, adjY, j))
+							moves.add(new PlayerMove(p.playerNo, adjX + deltaCoord[j][0], adjY + deltaCoord[j][1]));
 					}
-				} else {
-					moves.add(new PlayerMove(p.playerNo, adjX, adjY));
-				}	
+				}
 			}
 		}
 	}
 
-	/**
-	 * @param player Player in question
-	 * @return int[] of {steps to goal, x-coord of next Step, y-coord}
-	 */
-	public int[] BFS(Player player) {
-	
-	
-		int [][][] prev = new int[boardDim][boardDim][2]; // prev[x][y][prev x,
-															// y];
-	
-		// initialise all as {-1, -1} (not visited)
+	public boolean gameOver() {
+		return (p1.won() || p2.won());
+	}
+	public int[] BFS2(Player player) {
+		int[][][] prev = new int[boardDim][boardDim][3];	// prev[x][y][prev x,y depth]
 		for (int i = 0; i < boardDim; i++)
 			for (int j = 0; j < boardDim; j++)
-				prev[i][j] = new int[] { -1, -1 };
-	
-		// get starting point
-		prev[player.getX()][player.getY()] = new int[] {player.getX(), player.getY()};
-		Queue<int[]> Q = new LinkedList<>();
-		Q.add(new int[] {player.getX(), player.getY()});
-	
-		int[] goalCell = new int[] {-1, -1};
+				prev[i][j] = new int[] { -1, -1, -1};	
 		
-		while (!Q.isEmpty()) {
-			int[] point = Q.remove();
-			int x = point[0];
-			int y = point[1];
+		prev[player.getX()][player.getY()] = new int[] {player.getX(), player.getY(), 0};
+		int[] source = new int[] {player.getX(), player.getY()};
+		int[] goal = null;
+		Queue<int[]> Q = new LinkedList<>();
+		Q.add(source);
+		
+		int[] u;
+		while(!Q.isEmpty()) {
+			u = Q.poll();
+			int x = u[0];
+			int y = u[1];
 			
 			if(y == player.winning_y) {
-				goalCell[0] = x;
-				goalCell[1] = y;
+				goal = u;
 				break;
 			}
 			
 			int _x, _y;
+			for(int i = 0; i < 4; i++) {
+				if(canGoIn(x, y, i)) {
+					_x = x + deltaCoord[i][0];
+					_y = y + deltaCoord[i][1];	
+					prev[_x][_y] = new int[] {x, y, prev[x][y][2] + 1};
+				}
+			}
+			
+			
+		}
+		return null;
+	}
 	
-			// check adjacent spots
-			for (int i = 0; i < 4; i++) {
+	
+	/**
+	 * @param player Player in question
+	 * @return int[] of {steps to goal, x-coord of next Step, y-coord}, 
+	 * returns null if no such path exists
+	 */
+	public int[] BFS(Player player) {
+		boolean[][] visited = new boolean[boardDim][boardDim];
+		for(int i = 0; i < boardDim; i++) 
+			for(int j = 0; j < boardDim; j++)
+				visited[i][j] = false;
+		
+		Cell source = new Cell(player.point);
+		visited[player.getX()][player.getY()] = true;
+		Cell goal = null;
+		Queue<Cell> Q = new LinkedList<>();
+		Q.add(source);
+		
+		while(!Q.isEmpty()) {
+			Cell u = Q.poll();
+			int x = u.cell.x;
+			int y = u.cell.y;
+			
+			if(y == player.winning_y) {
+				goal = u;
+				break;
+			}
+			
+			int _x, _y;
+			for(int i = 0; i < 4; i++) {
 				_x = x + deltaCoord[i][0];
 				_y = y + deltaCoord[i][1];
-				if ((_x < 0 || _x > boardDim - 1) // out of the board
-						|| (_y < 0 || _y > boardDim - 1))
-					continue;
-				if ( canGoIn(x, y, i)
-						&& (prev[_x][_y][0] == -1 && prev[_x][_y][0] == -1) ) {
-					int[] newPoint = new int[] {_x, _y};
-					prev[_x][_y][0] = x;
-					prev[_x][_y][1] = y;
-					Q.add(newPoint);
+				if(canGoIn(u.cell, i) && !visited[_x][_y]) {
+					Cell v = new Cell(new Point(_x, _y), u);
+					visited[_x][_y] = true;
+					Q.add(v);
 				}
 			}
 		}
 		
-		if(goalCell[0] == -1) return null;	// no path to goal exists
-		
-		// find number of steps
-		int steps = 1;
-		int x = goalCell[0];	// will eventually hold first step
-		int y = goalCell[1];	// in shortest path
-		
-		Deque<int[]> D = new ArrayDeque<int[]>();
-		
-		Str.println("Backtracking from " + Str.ptToStr(goalCell[0], goalCell[1]) + " to " + Str.ptToStr(player.getX(), player.getY()));
-		while( !(x == player.getX() && y == player.getY()) ) {
-			Str.print("Now at " + Str.ptToStr(x, y));
-			x = prev[x][y][0];
-			y = prev[x][y][1];
-			Str.println("  Next stop: " + Str.ptToStr(x, y));
-			D.push(new int[] {x,y});
-			steps++;
+		if(goal == null) {
+			//Str.println("Error!!!!!!!");
+			return null;
+		} else {
+			Cell curr = goal;
+			while(curr.prev != source) 
+				curr = curr.prev;
+			return new int[] {goal.depth, curr.cell.x, curr.cell.y};
 		}
-		
-		D.pop();	// last element is the source cell
-		int[] nextStep = D.pop();
-		
-		return new int[] {steps, nextStep[0], nextStep[1]};
 	}
 
-	// helper methods
-	
+
+	// helper methods	
 	public boolean wallInDir(int x, int y, int direction) {
 		if(direction == UP 		&& wallAt(x,  y, Wall.HORIZONTAL)) return true;
 		if(direction == DOWN 	&& wallAt(x,  y - 1, Wall.HORIZONTAL)) return true;
@@ -226,8 +246,8 @@ public class Quoridor {
 	public boolean wallAt(int[] coords, int orientation) {
 		
 		// add the edge conditions
-		if(coords[0] == 0 && orientation == Wall.VERTICAL) return true;
-		if(coords[1] == boardDim - 1 && orientation == Wall.HORIZONTAL) return true;
+		if( (coords[0] == 0 || coords[0] == boardDim) && orientation == Wall.VERTICAL) return true;
+		if( (coords[1] == boardDim - 1 || coords[1] == -1) && orientation == Wall.HORIZONTAL) return true;
 		
 		for (Wall w : walls) {
 			if (orientation == Wall.HORIZONTAL) {
@@ -267,12 +287,18 @@ public class Quoridor {
 		return (playerNo == 1) ? p1 : p2;
 	}
 	
+	public Player getOtherPlayer(int playerNo) {
+		return (playerNo == 1) ? p2 : p1;
+	}
+	
 	public void display() {
 		for(int i = boardDim - 1; i >= 0; i--) {
 			printHorizontalWalls(i);
 			printVerticalWalls(i);
 		}
 		printNumberedRow();
+		Str.println(p1.toString(1));
+		Str.println(p2.toString(2));
 	}
 	
 	private void printHorizontalWalls(int row) {
@@ -330,14 +356,8 @@ public class Quoridor {
 		q.walls.add(new Wall(5, 0, Wall.HORIZONTAL));
 		q.walls.add(new Wall(6, 0, Wall.VERTICAL));
 		q.display();	// display is wrong
-		System.out.println("Go up? " + q.canGoIn(3, 5, UP));	// true - true
-		System.out.println("Go down? " + q.canGoIn(3, 5, DOWN));	// false - false
-		System.out.println("Go left? " + q.canGoIn(3, 5, LEFT));	// false - true 	
-		System.out.println("Go right? " + q.canGoIn(3, 5, RIGHT));	// true - true
-		int[] ans = q.BFS(q.p1);
-		
-		System.out.println("Steps to goal for player 1: " + ans[0] + " to " + ans[1] + " " + ans[2]);
-		
-		q.debug();
+		Str.print("P1 path: " + q.BFS(q.p1)[0]);
+		AI ai = new AI();
+		Str.println("AI score of " + ai.evaluate(q));
 	}
 }
