@@ -62,7 +62,7 @@ public class Quoridor {
 
 	private void generateWallMoves(Player p, ArrayList<Move> moves) {
 		int playerNo = p.getPlayerNo();
-		if(p.getWalls() > 1) {
+		if(p.getWalls() > 0) {
 			for(int x = 1; x < boardDim; x++) {
 				for(int y = 0; y < boardDim - 1; y++) {
 					if(!wallAt(x, y, Wall.HORIZONTAL) && !wallAt(x - 1, y, Wall.HORIZONTAL) 
@@ -299,6 +299,7 @@ public class Quoridor {
 		printNumberedRow();
 		Str.println(p1.toString(1));
 		Str.println(p2.toString(2));
+		Str.println();
 	}
 	
 	private void printHorizontalWalls(int row) {

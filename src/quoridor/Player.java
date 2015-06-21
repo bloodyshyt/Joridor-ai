@@ -27,6 +27,7 @@ public class Player {
 	
 	public int getX() {return point.x;}
 	public int getY() {return point.y;}
+	public int getWinningY() {return winning_y;}
 	public int getPlayerNo() {return playerNo;}
 	public void setPlayerNo(int no) { this.playerNo = no; }
 	public Point getPoint() {return point;}

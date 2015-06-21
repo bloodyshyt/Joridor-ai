@@ -9,6 +9,14 @@ import Util.Str;
 public class AI {
 	
 	int maxPlayer, minPlayer;
+	
+	double[] mFeatureWeights;
+	
+	public AI() {}	// for kicks
+
+	public AI(double[] pFeatureWeights) {
+		mFeatureWeights = pFeatureWeights;
+	}
 
 	public Move getNextMove(Quoridor Q, int player) {
 		Move bestMove = null;
@@ -30,7 +38,7 @@ public class AI {
 		Move[] moves = Q.generateMoves(maxPlayer);
 		//Str.println("Expanding on " + moves.length + " nodes");
 		for(Move m: moves) {
-			Quoridor nextState = m.playMove(Q);
+			Quoridor nextState = m.executeMoveOn(Q);
 			currentScore = _minimax(nextState, minPlayer, depth);
 			//Str.println(m.toString() + " has score of " + currentScore + " vs " + bestScore);
 			if(currentScore > bestScore) {
@@ -58,7 +66,7 @@ public class AI {
 		} else {
 			Move[] moves = Q.generateMoves(playerNo);
 			for (Move move : moves) {
-				Quoridor nextState = move.playMove(Q);
+				Quoridor nextState = move.executeMoveOn(Q);
 				if (playerNo == maxPlayer) {
 					currentScore = _minimax(nextState, minPlayer, depth - 1);
 					bestScore = Math.max(bestScore, currentScore);
@@ -79,15 +87,36 @@ public class AI {
 		Player player = Q.getPlayer(maxPlayer);
 		Player opponent = Q.getPlayer(minPlayer);
 		//Q.debug();
-		int[] maxBFS = Q.BFS(player), minBFS = Q.BFS(opponent);
+		int[] maxBFS = Q.BFS(player);
+		int[] minBFS = Q.BFS(opponent);
 		if(maxBFS == null || minBFS == null) return -10000000;
 		//int maxPath = maxBFS[0];
 		//int minPath = minBFS[0];
 		int maxWalls = player.getWalls();
 		int minWalls = opponent.getWalls();
 		
+		int maxManDist = Math.abs(player.getY() - player.getWinningY());
+		int minManDist = Math.abs(opponent.getY() - opponent.getWinningY());
+		
+		/* Previously test working */
 		//Str.println("Max path: " + maxPath + " Min path: " + minPath + " Max Walls: " + maxWalls + " min walls " + minWalls);
-		double score = minBFS[0] - maxBFS[0] + (maxWalls - minWalls);
+		// Evaluate Score: Min's Path - Max's Path + Max's Walls - Min's Walls
+		//double score = minBFS[0] - maxBFS[0] + (maxWalls - minWalls);
+		
+		int[] featureScores = new int[6];
+		featureScores[0] = maxBFS[0];
+		featureScores[1] = minBFS[0];
+		featureScores[2] = maxManDist;
+		featureScores[3] = minManDist;
+		featureScores[4] = maxWalls;
+		featureScores[5] = minWalls;
+		
+		//for(double weight : mFeatureWeights) Str.println("Weight: " + weight);
+		// Evalute score: Max Path, Min Path, Max ManDist, Min ManDist, Max Walls, Min Walls
+		double score = 0;
+		
+		for(int i = 0; i < featureScores.length; i++) score += mFeatureWeights[i] * featureScores[i];
+		//Str.println(score + "");
 		return score + 0.1 * Math.random();
 	}
 	
@@ -108,7 +137,7 @@ public class AI {
 		q.p1.setXY(new Point(4, 6));
 		q.p2.setXY(new Point(4, 1));
 		for(WallMove wm : new WallMove[] {wm1, wm2, wm3})
-			q = wm.playMove(q);
+			q = wm.executeMoveOn(q);
 		q.display();
 		AI ai = new AI();
 		Move move = ai.getNextMove(q, 2);
