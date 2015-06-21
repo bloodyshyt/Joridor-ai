@@ -20,9 +20,18 @@ public class AI {
 
 	public Move getNextMove(Quoridor Q, int player) {
 		Move bestMove = null;
+		
+		// if there are no walls left just walk towards goal
+		// Test: return next step in shortest path when there are no more walls
+
 		maxPlayer = player;
 		minPlayer = (maxPlayer == 1) ? 2 : 1;
 		int depth = 1;
+		
+		if (Q.getPlayer(player).getWalls() == 0) {
+			mFeatureWeights = new double[] {-1000, 0, 0, 0, 0, 0};
+			depth = 0;
+		}
 		
 		bestMove = minimax(Q, depth);
 		
@@ -55,7 +64,7 @@ public class AI {
 		double bestScore = (playerNo == maxPlayer) ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
 		double currentScore;
 
-		if(Q.gameOver()) {
+		if(Q.gameOver() != 0) {
 			if(Q.getPlayer(maxPlayer).won()) return 1000000000;
 			else return -1000000000;
 		}
@@ -89,7 +98,11 @@ public class AI {
 		//Q.debug();
 		int[] maxBFS = Q.BFS(player);
 		int[] minBFS = Q.BFS(opponent);
-		if(maxBFS == null || minBFS == null) return -10000000;
+		if(maxBFS == null || minBFS == null) {
+			//Str.println("Something fucked up");
+			//Q.display();
+			return -10000000;
+		}
 		//int maxPath = maxBFS[0];
 		//int minPath = minBFS[0];
 		int maxWalls = player.getWalls();

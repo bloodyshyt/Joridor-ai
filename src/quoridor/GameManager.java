@@ -11,6 +11,8 @@ public class GameManager {
 	Player currentPlayer;
 	AI ai;
 	
+	public boolean debug = false;
+	
 	// max manhattan distance, min manhattan distance, max path, min path, max walls, min walls
 	double[] p1FeatureWeights = new double[6];
 	double[] p2FeatureWeights = new double[6];
@@ -37,20 +39,25 @@ public class GameManager {
 		Str.println("Game resetted");
 	}
 	
-	public void start() {
+	/**
+	 * @return winner of quoridor game, returns 0 if turns exceed 200
+	 */
+	public int start() {
 		int turns = 0;
 		currentPlayer = game.getPlayer(1);
 		
 		/* Main game loop */
-		while(!game.gameOver()) {
-			Str.println("Player " + currentPlayer.getPlayerNo() + " turn.");
+		int winner = 0;
+		while((winner = game.gameOver()) == 0) {
+			if(debug) Str.println("Player " + currentPlayer.getPlayerNo() + " turn.");
 			playTurn(currentPlayer);
-			game.display();
+			if(debug) game.display();
 			currentPlayer = game.getOtherPlayer(currentPlayer.playerNo);
 			turns++;
 		}
 		
-		Str.println("Game ended in " + turns + " turns");
+		Str.println("Game ended in " + turns + " turns with player " + winner + " winning");
+		return winner;
 	}
 	
 	
@@ -59,13 +66,23 @@ public class GameManager {
 		ai = new AI(mPlayerFeatureWeights[player.getPlayerNo() - 1]);
 		Move nextMove = ai.getNextMove(game, player.playerNo);
 		game = nextMove.executeMoveOn(game);
-		Str.println(nextMove.toString());
+		if(debug) Str.println(nextMove.toString());
 	}
 
 	public static void main(String[] str) {
 		GameManager gm = new GameManager();
-		gm.reset(new double[] {-1, 1, 0.5, 0.5, 1, -1}, new double[] {-1, 1, 1, 1, 1, -1});
-		gm.start();
+		int num_game = 30;
+		int p1wins = 0, p2wins = 0, draws = 0;
+		
+		for(int gameNumber = 0; gameNumber < num_game; gameNumber++) {
+			gm.reset(new double[] {-1, 1, 0.5, 0.5, 1, -1}, new double[] {-1, 1, 1, 1, 1, -1});
+			int winner = gm.start();
+			if(winner == 0) draws++;
+			if(winner == 1) p1wins++;
+			if(winner == 2) p2wins++;
+		}
+		
+		Str.println("After " + num_game + " games, P1:" + p1wins + " P2:" + p2wins + " Draws:" + draws);
 	}
 
 }

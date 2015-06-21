@@ -49,6 +49,8 @@ public class Quoridor {
 	
 	
 	public Move[] generateMoves(Player p) {
+		
+		
 		ArrayList<Move> legalMoves = new ArrayList<>();
 		generatePlayerMoves(p, legalMoves);
 		generateWallMoves(p, legalMoves);
@@ -67,8 +69,12 @@ public class Quoridor {
 				for(int y = 0; y < boardDim - 1; y++) {
 					if(!wallAt(x, y, Wall.HORIZONTAL) && !wallAt(x - 1, y, Wall.HORIZONTAL) 
 							&& !wallAt(x, y, Wall.VERTICAL) && !wallAt(x, y + 1, Wall.VERTICAL)) {
-								moves.add(new WallMove(x, y, Wall.HORIZONTAL, p.getPlayerNo()));
-								moves.add(new WallMove(x, y, Wall.VERTICAL, p.getPlayerNo()));
+								
+								Move horizWallMove = new WallMove(x, y, Wall.HORIZONTAL, p.getPlayerNo());
+								Move vertiWallMove = new WallMove(x, y, Wall.VERTICAL, p.getPlayerNo());
+								
+								if(wallMoveLegal((WallMove) horizWallMove)) moves.add(horizWallMove);
+								if(wallMoveLegal((WallMove) horizWallMove)) moves.add(vertiWallMove);
 							}
 									
 				}
@@ -101,9 +107,12 @@ public class Quoridor {
 		}
 	}
 
-	public boolean gameOver() {
-		return (p1.won() || p2.won());
+	public int gameOver() {
+		if(p1.won()) return 1;
+		else if (p2.won()) return 2;
+		else return 0;
 	}
+	
 	public int[] BFS2(Player player) {
 		int[][][] prev = new int[boardDim][boardDim][3];	// prev[x][y][prev x,y depth]
 		for (int i = 0; i < boardDim; i++)
@@ -224,6 +233,17 @@ public class Quoridor {
 	public boolean canGoIn(Point p, int direction) {
 		return canGoIn(p.x, p.y, direction);
 	}
+	
+	/**
+	 * @param pWallMove: Wall move to be tested
+	 * @return whether move is legal by checking if it blocks path to goal
+	 */
+	public boolean wallMoveLegal(WallMove pWallMove) {
+		Quoridor _Q = new Quoridor(this);
+		pWallMove.executeMoveOn(_Q);
+		if(_Q.BFS(_Q.getPlayer(1)) != null && _Q.BFS(_Q.getPlayer(2)) != null) return true;
+		return false;
+	}
 
 	/**
 	 * Is there an empty adjacent cell in the given direction?
@@ -233,8 +253,8 @@ public class Quoridor {
 	 * @return
 	 */
 	public boolean canGoIn(int x, int y, int direction) {
-		if(!wallInDir(x, y, direction) && !pawnInDir(x, y, direction)) return true;
-		
+		//if(!wallInDir(x, y, direction) && !pawnInDir(x, y, direction)) return true;
+		if(!wallInDir(x, y, direction)) return true;
 		return false;
 	}
 
@@ -357,8 +377,12 @@ public class Quoridor {
 		q.walls.add(new Wall(5, 0, Wall.HORIZONTAL));
 		q.walls.add(new Wall(6, 0, Wall.VERTICAL));
 		q.display();	// display is wrong
-		Str.print("P1 path: " + q.BFS(q.p1)[0]);
-		AI ai = new AI();
-		Str.println("AI score of " + ai.evaluate(q));
+		
+		int[] bfs = q.BFS(q.p1);
+		Str.print("P1 path: " + bfs[0] + "from (" + bfs[1] + "," + bfs[2] + ")");
+		
+		
+		//AI ai = new AI();
+		//Str.println("AI score of " + ai.evaluate(q));
 	}
 }
